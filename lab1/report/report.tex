@@ -1,0 +1,35 @@
+\documentclass[a4paper,12pt]{article}
+
+\include{preamble.inc}
+
+\setcounter{tocdepth}{4}
+\righthyphenmin = 2
+\tolerance = 2048
+
+\begin{document}
+\include{title}
+
+\specsection{Листинг обработчика INT 8h}
+
+\lstinputlisting[style={asm}]{inc/src/int8h.asm}
+
+\specsection{Листинг процедуры sub\_1}
+
+\lstinputlisting[style={asm}]{inc/src/sub_1.asm}
+
+\pagebreak
+
+\specsection{Схема алгоритма обработчика INT 8h}
+
+\includegraphics[height=230mm]{inc/img/int8h_1}
+
+\includegraphics{inc/img/int8h_2}
+
+\specsection{Схема алгоритма процедуры sub\_1}
+
+\includegraphics{inc/img/sub_1}
+
+
+%\lstinputlisting[style={asm}]{inc/src/sub_1.asm}
+
+\end{document}
