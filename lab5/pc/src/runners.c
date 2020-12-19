@@ -32,7 +32,7 @@ int run_producer(cycle_buff_t *const buffer,
             perror("buffer write error!");
             return EXIT_FAILURE;
         }
-        printf(" Producer #%d write: %c (slept %ds)\n", prod_id,
+        printf(" Producer #%d write: %c -- idle %ds\n", prod_id,
                ch, sleep_time);
         // !!! --- CRITICAL --- !!!
 
@@ -69,7 +69,7 @@ int run_consumer(cycle_buff_t *const buffer,
             perror("buffer read error!");
             return EXIT_FAILURE;
         }
-        printf(" Consumer #%d read:  %c (slept %ds)\n", cons_id,
+        printf(" Consumer #%d read:  %c -- idle %ds\n", cons_id,
                ch, sleep_time);
         // !!! --- CRITICAL --- !!!
 

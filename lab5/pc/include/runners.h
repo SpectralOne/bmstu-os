@@ -18,7 +18,7 @@
 #define BUF_EMPTY 2
 
 #define MAX_RANDOM_PROD 2
-#define MAX_RANDOM_CONS 7
+#define MAX_RANDOM_CONS 5
 
 int run_producer(cycle_buff_t *const buffer, const int sid, const int prod_id);
 int run_consumer(cycle_buff_t *const buffer, const int sid, const int cons_id);

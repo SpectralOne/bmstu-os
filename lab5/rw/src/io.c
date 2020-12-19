@@ -59,7 +59,7 @@ int reader_run(int *const shared_counter,
 
         // !!! --- CRITICAL --- !!!
         int val = *shared_counter;
-        printf(" Reader #%d read:  %3d (slept %ds)\n", reader_id,
+        printf(" Reader #%d read:  %3d -- idle %ds\n", reader_id,
                val, sleep_time);
         // !!! --- CRITICAL --- !!!
 
@@ -71,12 +71,12 @@ int reader_run(int *const shared_counter,
     return EXIT_SUCCESS;
 }
 
-static inline int start_write(int sid) {
+static inline int write_start(int sid) {
     return semop(sid, WRITER_QUEUE, 3) != -1 &&
            semop(sid, WRITER_LOCK, 2) != -1;
 }
 
-static inline int stop_write(int sid) {
+static inline int write_stop(int sid) {
     return semop(sid, WRITER_RELEASE, 1) != -1;
 }
 
@@ -94,19 +94,19 @@ int writer_run(int *const shared_counter,
         sleep_time = rand() % MAX_RANDOM + 1;
         sleep(sleep_time);
 
-        if (!start_write(sid)) {
-            perror("Something went wrong with start_write!");
+        if (!write_start(sid)) {
+            perror("Something went wrong with write_start!");
             exit(EXIT_FAILURE);
         }
 
         // !!! --- CRITICAL --- !!!
         int val = ++(*shared_counter);
-        printf(" Writer #%d write: %3d (slept %ds)\n", writer_id,
+        printf(" Writer #%d write: %3d -- idle %ds\n", writer_id,
                val, sleep_time);
         // !!! --- CRITICAL --- !!!
         
-        if (!stop_write(sid)) {
-            perror("Something went wrong with stop_write!");
+        if (!write_stop(sid)) {
+            perror("Something went wrong with write_stop!");
             exit(EXIT_FAILURE);
         }
     }
