@@ -43,6 +43,7 @@ int main(void) {
         perror("semget failed!");
         return EXIT_FAILURE;
     }
+
     semctl(sid, BIN_SEM, SETVAL, 1);
     semctl(sid, BUF_EMPTY, SETVAL, N);
     semctl(sid, BUF_FULL, SETVAL, 0);
