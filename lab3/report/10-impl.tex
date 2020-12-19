@@ -1,0 +1,74 @@
+\chapter*{Задание 1}
+
+Изучение команд {\ttfamily Shell}:
+\begin{itemize}
+	\item используя команду {\ttfamily mkdir} cоздайте директорию имeнем своей группы;
+	\item перейдите в созданную директорию с помощью команды {\ttfamily cd};
+	\item cоздайте поддиректорию, например, используя свою фамилию;
+	\item команда {\ttfamily ls};
+	\item команда {\ttfamily ps};
+\end{itemize}
+
+
+\img{140mm}{task1}{Создание директории, поддиректории, {\ttfamily cd, ps, aux}}
+
+\chapter*{Задание 2}
+
+Процессы:
+\begin{itemize}
+	\item напишите программу, в которой создается дочерний процесс и организуйте как в предке, так и в потомке бесконечные циклы, в которых выводятся идентификаторы процессов с помощью системного вызова {\ttfamily getpid()}
+	\item запустите программу и посмотрите идентификаторы созданных процессов: предка и потомка;
+	\item для получения процесса зомби выполните следующие действия: a) удалите командой {\ttfamily kill} потомка ипосмотрите с помощью команды {\ttfamily ps} его новый статус – Z; b) удалите предка;
+	\item для получения ``осиротевшего`` процесса запустите программу еще раз, но в этот раз удалите предка и посмотрите с помощью команды ps идентификатор предкка у продолжающего выполнятьсяпотомка -- идентификатор предка будет изменен на 1, так как процесс был ``усыновлен`` процессом с идентификатором 1 процессом ``открывшим`` терминал в случае, если используется {\ttfamily Unix BSD}, илиидентификатор процессов-посредников в случае, {\ttfamily Linux Ubuntu}.
+\end{itemize}
+
+\begin{lstlisting}[style=CStyle]
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+int main(void) {
+	int childpid;
+	if ((childpid = fork()) == -1) {
+		perror("Can't fork.\n");
+		return EXIT_FAILURE;
+	} else if (childpid == 0) {
+		while (1) {
+			printf("child pid = %d\n", getpid());
+		}
+		return EXIT_SUCCESS;
+	} else {
+		while (1) {
+			printf("parent pid = %d\n", getpid());
+		}
+		return 0;
+	}
+}
+\end{lstlisting}
+
+\img{50mm}{task2-run}{Вывод программы}
+
+\img{90mm}{task2-zombie}{Создание процесса {\ttfamily zombie}}
+
+\chapter*{Задание 3}
+
+Продемонстрировать работу {\ttfamily pipe}:
+\begin{itemize}
+	\item создание и запись в {\ttfamily pipe};
+	\item чтение из {\ttfamily pipe}.
+\end{itemize}
+
+\img{50mm}{task3-write}{Создание и запись в {\ttfamily pipe}}
+
+\img{29mm}{task3-read}{Чтение из {\ttfamily pipe}}
+
+\chapter*{Задание 4}
+
+Изучение {\ttfamily softlink} и {\ttfamily hardlink}:
+\begin{itemize}
+	\item создать {\ttfamily hardlink};
+	\item создать и изменить {\ttfamily softlink}.
+\end{itemize}
+
+\img{85mm}{task4-hardlink}{Создание {\ttfamily hardlink}}
+
+\img{85mm}{task4-softlink}{Создание и изменение {\ttfamily softlink}}
