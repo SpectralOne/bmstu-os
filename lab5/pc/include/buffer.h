@@ -4,7 +4,7 @@
 #include <string.h>
 #include <unistd.h>
 
-#define N 64
+#define N 24
 
 typedef char data_t[N];
 
