@@ -2,3 +2,6 @@
 *.log
 *.gz
 *.out
+*.o
+*.exe
+*.d
