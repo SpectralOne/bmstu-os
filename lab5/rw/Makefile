@@ -10,7 +10,7 @@ CFLAGS := -std=c99 -Wall -Werror -pedantic -pipe
 HEADERS := include
 RELEASE_FILES := $(wildcard src/*.c)
 
-all : $(MAIN_APP) $(TEST_APP)
+all : $(MAIN_APP)
 
 # Main app
 $(MAIN_APP) : $(patsubst src/%.c,%.o, $(RELEASE_FILES))
