@@ -1,14 +1,14 @@
 \babel@toc {russian}{}
-\contentsline {chapter}{\numberline {1}Функции обработчика прерываний от системного таймера}{2}%
-\contentsline {section}{\numberline {1.1}ОС семейства Unix/Linux}{2}%
-\contentsline {section}{\numberline {1.2}Windows-системы}{3}%
-\contentsline {chapter}{\numberline {2}Пересчёт динамических приоритетов}{5}%
-\contentsline {section}{\numberline {2.1}ОС семейства Unix/Linux}{5}%
-\contentsline {subsection}{\numberline {2.1.1}Приоритеты процессов}{5}%
-\contentsline {section}{\numberline {2.2}Windows-системы}{8}%
-\contentsline {subsection}{\numberline {2.2.1}Приоритеты потоков}{9}%
-\contentsline {subsection}{\numberline {2.2.2}Повышение приоритета по завершении операции ввода-вывода}{11}%
-\contentsline {subsection}{\numberline {2.2.3}Повышение приоритета по окончании ожидания на событии или семафоре}{12}%
-\contentsline {subsection}{\numberline {2.2.4}Повышение приоритета по окончании ожидания потоками активного процесса}{12}%
-\contentsline {subsection}{\numberline {2.2.5}Повышение приоритета при пробуждении GUI-потоков}{13}%
-\contentsline {subsection}{\numberline {2.2.6}Повышение приоритета при нехватке процессорного времени}{13}%
+\contentsline {chapter}{\numberline {1}Функции обработчика прерываний от системного таймера}{2}{}%
+\contentsline {section}{\numberline {1.1}ОС семейства Unix/Linux}{2}{}%
+\contentsline {section}{\numberline {1.2}Windows-системы}{3}{}%
+\contentsline {chapter}{\numberline {2}Пересчёт динамических приоритетов}{5}{}%
+\contentsline {section}{\numberline {2.1}ОС семейства Unix/Linux}{5}{}%
+\contentsline {subsection}{\numberline {2.1.1}Приоритеты процессов}{5}{}%
+\contentsline {section}{\numberline {2.2}Windows-системы}{8}{}%
+\contentsline {subsection}{\numberline {2.2.1}Приоритеты потоков}{8}{}%
+\contentsline {subsection}{\numberline {2.2.2}Повышение приоритета по завершении операции ввода-вывода}{11}{}%
+\contentsline {subsection}{\numberline {2.2.3}Повышение приоритета по окончании ожидания на событии или семафоре}{12}{}%
+\contentsline {subsection}{\numberline {2.2.4}Повышение приоритета по окончании ожидания потоками активного процесса}{12}{}%
+\contentsline {subsection}{\numberline {2.2.5}Повышение приоритета при пробуждении GUI-потоков}{13}{}%
+\contentsline {subsection}{\numberline {2.2.6}Повышение приоритета при нехватке процессорного времени}{13}{}%
