@@ -6,3 +6,8 @@
 *.o
 *.exe
 *.d
+*.ko
+*.symvers
+*.mod
+*.orders
+*.cmd
