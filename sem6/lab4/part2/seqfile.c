@@ -1,120 +1,174 @@
-#include <linux/module.h> 
-#include <linux/kernel.h> 
-#include <linux/init.h>  
-#include <linux/vmalloc.h>
-#include <linux/proc_fs.h> 
-#include <linux/uaccess.h>
+#include <linux/module.h>
+#include <linux/kernel.h>
+#include <linux/proc_fs.h>
 #include <linux/seq_file.h>
+#include <linux/string.h>
+#include <linux/vmalloc.h>
+#include <asm/uaccess.h>
 
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Bogachenko Artem");
 
-#define MAX_BUF_SIZE PAGE_SIZE
-
 #define DIRNAME "seqfiles"
-#define FILENAME "seqs"
-#define SYMLINK "seqlink"
+#define FILENAME "seqfile"
+#define SYMLINK "seqfile_link"
 #define FILEPATH DIRNAME "/" FILENAME
 
-static struct proc_dir_entry *fortune_dir = NULL;
-static struct proc_dir_entry *fortune_file = NULL;
-static struct proc_dir_entry *fortune_link = NULL;
+#define MAX_COOKIE_LENGTH PAGE_SIZE
 
-static char *cookie_buffer;
-static int next_index;
-static int current_fortune;
+static char tmp[256];
 
-static char tmp[MAX_BUF_SIZE];
+static struct proc_dir_entry *proc_file = NULL;
+static struct proc_dir_entry *proc_dir = NULL;
+static struct proc_dir_entry *proc_link = NULL;
 
-int fortune_show(struct seq_file* m, void* v) {
-    int len;
-    if (!next_index)
-        return 0;
-    // if (current_fortune >= next_index)
-    //     current_fortune = 0;
-    len = snprintf(tmp, MAX_BUF_SIZE, "%s", &cookie_buffer[current_fortune]);
-    seq_printf(m, "%s", tmp);
-    current_fortune += len;
-    printk(KERN_INFO "+: show is called\n");
+static char *cookie_pot = NULL;  
+static int cookie_index = 0;  
+static int next_seq_file = 0;  
+
+ssize_t seq_file_write(struct file *filep, const char __user *buf, size_t len, loff_t *offp);
+
+static int seq_file_show(struct seq_file *m, void *v) {
+  
+  printk(KERN_INFO "+: seq_file: show\n");
+  if (!cookie_index)
     return 0;
+
+  if (next_seq_file >= cookie_index) {
+    next_seq_file = 0;
+  }
+
+  int len = snprintf(tmp, MAX_COOKIE_LENGTH, "%s\n", &cookie_pot[next_seq_file]);
+  seq_printf(m, "%s", tmp);
+  next_seq_file += len;
+  return 0;
+} 
+
+static void *seq_file_start(struct seq_file *m, loff_t *pos)
+{
+
+  printk(KERN_INFO "+: seq_file: start\n");
+  static unsigned long counter =0;
+  if (!*pos) {
+    return &counter;
+  }
+  else {
+    *pos = 0;
+    return NULL;
+  }
 }
 
-ssize_t fortune_write(struct file *filp, const char __user *buf, size_t len, loff_t *offp) {
-    if (len > MAX_BUF_SIZE - next_index + 1) {
-        printk(KERN_ERR "+: cookie_buffer overflow error\n");
-        return -ENOSPC;
-    }
-    if (copy_from_user(&cookie_buffer[next_index], buf, len)) {
-        printk(KERN_ERR "+: copy_to_user error\n");
-        return -EFAULT;
-    }
-    printk(KERN_INFO "+: write is called\n");
-    next_index += len - 1;
-    cookie_buffer[next_index] = '\0';
-    return len;
+static void *seq_file_next(struct seq_file *m, void *v, loff_t *pos) {
+  printk(KERN_INFO "+: seq_file: next\n");
+  unsigned long *tmp = (unsigned long *) v;
+  (*tmp)++;
+  (*pos)++;
+  return NULL;
 }
 
-int fortune_open(struct inode *inode, struct file *file) {
-    printk(KERN_INFO "+: called open\n");
-    return single_open(file, fortune_show, NULL);
+static void seq_file_stop(struct seq_file *m, void *v) {
+  printk(KERN_INFO "+: seq_file: stop\n");
 }
 
-int fortune_release(struct inode *inode, struct file *file) {
-    printk(KERN_INFO "+: called release\n");
-    return single_release(inode, file);
-}
-
-static struct proc_ops fops = {
-    proc_read: seq_read, 
-    proc_write: fortune_write, 
-    proc_open: fortune_open, 
-    proc_release: fortune_release
+static struct seq_operations seq_file_ops = {
+  .start = seq_file_start,
+  .next = seq_file_next,
+  .stop = seq_file_stop,
+  .show = seq_file_show
 };
 
-static void freemem(void) {
-    if (fortune_link)
-        remove_proc_entry(SYMLINK, NULL);
-    if (fortune_file)
-        remove_proc_entry(FILENAME, fortune_dir);
-    if (fortune_dir)
-        remove_proc_entry(DIRNAME, NULL);
-    if (cookie_buffer)
-        vfree(cookie_buffer);
+static int seq_file_open(struct inode *i, struct file * f) {
+    printk(KERN_DEBUG "+: seq_file: open seq_file\n");
+    return seq_open(f, &seq_file_ops);
 }
 
-static int __init fortune_init(void) {
-    if (!(cookie_buffer = vmalloc(MAX_BUF_SIZE))) {
-        freemem();
-        printk(KERN_ERR "+: error during vmalloc\n");
-        return -ENOMEM;
-    }
-    memset(cookie_buffer, 0, MAX_BUF_SIZE);
+static struct proc_ops ops = {
+    .proc_open = seq_file_open,
+    .proc_read = seq_read,
+    .proc_write = seq_file_write,
+    .proc_lseek = seq_lseek,
+    .proc_release = seq_release, 
+};
 
-    if (!(fortune_dir = proc_mkdir(DIRNAME, NULL))) {
-        freemem();
-        printk(KERN_ERR "+: error during directory creation\n");
-        return -ENOMEM;
-    } else if (!(fortune_file = proc_create(FILENAME, 0666, fortune_dir, &fops))) {
-        freemem();
-        printk(KERN_ERR "+: error during file creation\n");
-        return -ENOMEM;
-    } else if (!(fortune_link = proc_symlink(SYMLINK, NULL, FILEPATH))) {
-        freemem();
-        printk(KERN_ERR "+: error during symlink creation\n");
-        return -ENOMEM;
-    }
+void cleanup_seq_file_module(void);
 
-    next_index = 0;
-    current_fortune = 0;
+static int __init init_seq_file_module(void) {
 
-    printk(KERN_INFO "+: module loaded\n");
-    return 0;
+  cookie_pot = (char *)vmalloc(MAX_COOKIE_LENGTH);
+  if(!cookie_pot) {
+    printk(KERN_ERR "+: seq_file: vmalloc error\n");
+    return -ENOMEM;
+  }
+  memset(cookie_pot, 0, MAX_COOKIE_LENGTH);
+
+  proc_dir = proc_mkdir(DIRNAME, NULL);
+  if (!proc_dir) {
+    printk(KERN_INFO "+: seq_file: Couldn't create proc dir.\n");
+    
+    cleanup_seq_file_module();
+    return -ENOMEM;
+  }
+
+  proc_file = proc_create(FILENAME, 0666, proc_dir, &ops);
+  if (!proc_file) {
+    printk(KERN_INFO "+: seq_file: Couldn't create proc file.\n");
+    cleanup_seq_file_module();
+    return -ENOMEM;
+  } 
+  proc_link = proc_symlink(SYMLINK, NULL, FILEPATH);
+  if (!proc_link)
+  {
+    printk(KERN_INFO "+: seq_file: Couldn't create proc symlink.\n");
+    cleanup_seq_file_module();
+    return -ENOMEM;
+  }
+
+  cookie_index = 0;
+  next_seq_file = 0;
+  printk(KERN_INFO "+: seq_file: Module loaded.\n");
+
+  return 0;
 }
 
-static void __exit fortune_exit(void) {
-    freemem();
-    printk(KERN_INFO "+: module unloaded\n");
+void cleanup_seq_file_module(void) {
+  if (cookie_pot)
+    vfree(cookie_pot);
+  if (proc_link)
+    remove_proc_entry(SYMLINK, NULL);
+  if (proc_file)
+    remove_proc_entry(FILENAME, proc_dir);
+  if (proc_dir)
+    remove_proc_entry(DIRNAME, NULL);
 }
 
-module_init(fortune_init) 
-module_exit(fortune_exit)
+static void __exit exit_seq_file_module(void) {
+  cleanup_seq_file_module();
+  printk(KERN_INFO "seq_file: unloaded\n");
+}
+
+module_init(init_seq_file_module);
+module_exit(exit_seq_file_module);
+
+ssize_t seq_file_write(struct file *filep, const char __user *buf,
+    size_t len, loff_t *offp) {
+
+  printk(KERN_INFO "seq_file: write\n");
+
+  int avail = (MAX_COOKIE_LENGTH - cookie_index) + 1;
+
+  if(len > avail) {
+    printk(KERN_ERR "seq_file: cookie_pot overflow\n");
+    return -ENOSPC;
+  }
+
+  if(copy_from_user(&cookie_pot[cookie_index], buf, len)) {
+    
+    printk(KERN_ERR "seq_file: copy from user error\n");
+    return -EFAULT;
+  }
+
+  cookie_index += len;
+  cookie_pot[cookie_index-1] = '\0';
+
+  return len;
+}
