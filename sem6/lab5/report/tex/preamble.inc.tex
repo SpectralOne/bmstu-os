@@ -1,0 +1,81 @@
+\usepackage{cmap} % Улучшенный поиск русских слов в полученном pdf-файле
+\usepackage[T2A]{fontenc} % Поддержка русских букв
+\usepackage[utf8]{inputenc} % Кодировка utf8
+\usepackage[english,russian]{babel} % Языки: русский, английский
+%\usepackage{pscyr} % Нормальные шрифты
+\usepackage{enumitem}
+\usepackage{array}
+
+\usepackage{verbatim}
+
+\usepackage{caption}
+\captionsetup{labelsep=endash}
+\captionsetup[figure]{name={Рисунок}}
+
+\usepackage{amsmath}
+
+\usepackage{geometry}
+\geometry{left=30mm}
+\geometry{right=15mm}
+\geometry{top=20mm}
+\geometry{bottom=20mm}
+
+\usepackage{titlesec}
+\titleformat{\section}
+	{\normalsize\bfseries}
+	{\thesection}
+	{1em}{}
+\titlespacing*{\chapter}{0pt}{-30pt}{8pt}
+\titlespacing*{\section}{\parindent}{*4}{*4}
+\titlespacing*{\subsection}{\parindent}{*4}{*4}
+
+\usepackage{setspace}
+\onehalfspacing % Полуторный интервал
+
+\frenchspacing
+\usepackage{indentfirst} % Красная строка
+
+\usepackage{titlesec}
+\titleformat{\chapter}{\LARGE\bfseries}{\thechapter}{20pt}{\LARGE\bfseries}
+\titleformat{\section}{\Large\bfseries}{\thesection}{20pt}{\Large\bfseries}
+
+\usepackage{listings}
+\usepackage{xcolor}
+
+\lstdefinestyle{c}{
+	language=C,
+	backgroundcolor=\color{white},
+	basicstyle=\footnotesize\ttfamily,
+	keywordstyle=\color{blue},
+	stringstyle=\color{red},
+	commentstyle=\color{gray},
+	directivestyle=\color{orange},
+	numbers=left,
+	numberstyle=\tiny,
+	stepnumber=1,
+	numbersep=5pt,
+	frame=single,
+	tabsize=2,
+	captionpos=t,
+	breaklines=true,
+	breakatwhitespace=true,
+	showstringspaces=false,
+	escapeinside={\#*}{*)},
+	morecomment=[l][\color{magenta}]{\#},
+	columns=fullflexible
+}
+
+\usepackage{pgfplots}
+\usetikzlibrary{datavisualization}
+\usetikzlibrary{datavisualization.formats.functions}
+
+\usepackage{graphicx}
+
+\usepackage[justification=centering]{caption} % Настройка подписей float объектов
+
+\usepackage[unicode,pdftex]{hyperref} % Ссылки в pdf
+\hypersetup{hidelinks}
+
+\usepackage{csvsimple}
+
+\newcommand{\code}[1]{\texttt{#1}}
