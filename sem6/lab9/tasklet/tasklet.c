@@ -4,7 +4,7 @@
 #include <linux/time.h>
 
 MODULE_LICENSE("GPL");
-MODULE_AUTHOR("Untilova");
+MODULE_AUTHOR("Bogachenko Artem");
 
 #define KEYB_IRQ 1
 
