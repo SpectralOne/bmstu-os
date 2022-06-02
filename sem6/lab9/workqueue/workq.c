@@ -1,80 +1,106 @@
-#include <linux/module.h>
-#include <linux/kernel.h>
-#include <linux/init.h>
-#include <linux/time.h>
 #include <linux/interrupt.h>
-#include <linux/vmalloc.h>
-#include <asm-generic/io.h>
+#include <linux/kernel.h>
+#include <linux/module.h>
+#include <linux/proc_fs.h>
+#include <linux/seq_file.h>
+#include <linux/workqueue.h>
+#include <linux/delay.h>
 
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Bogachenko Artem");
 
-#define IRQ_NUMBER 1
+#define IRQ 1
+static int devID;
 
-struct workqueue_struct *workqueue;
-struct work_struct *work;
+struct workqueue_struct *workQueue;
 
-int tmp;
-unsigned char scancode;
-
-char * scancode2ASCII(unsigned char code) {
-	char * ascii[84] = {
-		" ", "Esc", "1", "2", "3", "4", "5", "6", "7", "8", "9", "0", "-", "+", "Backspace", 
-		"Tab", "Q", "W", "E", "R", "T", "Y", "U", "I", "O", "P", "[", "]", "Enter", "Ctrl",
-		"A", "S", "D", "F", "G", "H", "J", "K", "L", ";", "\"", "'", "Shift (left)", "\\", 
-		"Z", "X", "C", "V", "B", "N", "M", "<", ">", "?", "Shift (right)", 
-		"*", "Alt", "Space", "CapsLock", 
-		"F1", "F2", "F3", "F4", "F5", "F6", "F7", "F8", "F9", "F10",
-		"NumLock", "ScrollLock", "Home", "Up", "Page-Up", "-", "Left",
-		" ", "Right", "+", "End", "Down", "Page-Down", "Insert", "Delete"
-	};
-	if (code < 84)
-		return ascii[code];
-	return "Error";
+void queueFunctionF(struct work_struct *work)
+{
+    printk(KERN_INFO "+ Key was clicked (1 worker) and we sleep\n");
+    msleep(10);
 }
 
-void work_handler(struct work_struct *work) {
-	char code = scancode & 0x7F;
-	char is_released = scancode & 0x80;
-	if (is_released) {
-		printk(KERN_INFO "Key '%s' pressed (code: %02x)\n", scancode2ASCII(code), code);
-	}
+void queueFunctionS(struct work_struct *work)
+{
+    printk(KERN_INFO "+ Key was clicked (2 worker)\n");
 }
 
-irqreturn_t irq_handler(int irq, void *dev_id) {
-	unsigned char status;
+struct work_struct fWork;
+struct work_struct sWork;
 
-	// Прочитать состояние клавиатуры
-	status = inb(0x64);
-	scancode = inb(0x60); 
-
-	queue_work(workqueue, work);
-	return IRQ_HANDLED;
+irqreturn_t handler(int irq, void *dev)
+{
+    printk(KERN_INFO "+ move work to queue...\n");
+    if (irq == IRQ)
+    {
+        queue_work(workQueue, &fWork);
+        queue_work(workQueue, &sWork);
+        return IRQ_HANDLED;
+    }
+    return IRQ_NONE;
 }
 
-static int __init work_init(void) {
-	workqueue = create_workqueue("my workqueue");
+static struct proc_dir_entry *file = NULL;
 
-	work = vmalloc(sizeof(struct work_struct));
-	INIT_WORK(work, work_handler);
-
-	int flags = IRQF_SHARED;
-	int ret = request_irq(IRQ_NUMBER, irq_handler, flags, "my interrupt (wq)", &tmp);
-	if (ret) {
-		printk (KERN_DEBUG "request irq failed\n");	
-		return -1;
-	}
-
-	printk(KERN_DEBUG "module with works loaded!\n");
-	return 0;
+int procShow(struct seq_file *filep, void *v)
+{
+    printk(KERN_INFO "+ called show\n");
+    seq_printf(filep, "Data of a 1 work: %d", fWork.data);
+    seq_printf(filep, "Data of a 2 work: %d", sWork.data);
+    return 0;
 }
 
-static void __exit work_exit(void) {
-	destroy_workqueue(workqueue);
-	vfree(work);
- 	free_irq(IRQ_NUMBER, &tmp);
-	printk (KERN_DEBUG "module with works unloaded!\n");
+int procOpen(struct inode *inode, struct file *fileInner)
+{
+    printk(KERN_INFO "+ called open\n");
+    return single_open(fileInner, procShow, NULL);
 }
 
-module_init(work_init);
-module_exit(work_exit);
+int procRelease(struct inode *inode, struct file *fileInner)
+{
+    printk(KERN_INFO "+ called release\n");
+    return single_release(inode, fileInner);
+}
+
+static struct proc_ops fops = {proc_read : seq_read, proc_open : procOpen, proc_release : procRelease};
+
+static int __init workQueueInit(void)
+{
+    int ret = request_irq(IRQ, handler, IRQF_SHARED, "handler", &devID);
+    if (ret)
+    {
+        printk(KERN_ERR "+ handler wasn't registered\n");
+        return ret;
+    }
+
+    if (!(workQueue = create_workqueue("workQueue")))
+    {
+        free_irq(IRQ, &devID);
+        printk(KERN_INFO "+ workqueue wasn't created");
+        return -ENOMEM;
+    }
+
+    INIT_WORK(&fWork, queueFunctionF);
+    INIT_WORK(&sWork, queueFunctionS);
+
+    if (!proc_create("workqueue", 0666, file, &fops))
+    {
+        printk(KERN_INFO "+ cannot proc_create!\n");
+        return -1;
+    }
+
+    printk(KERN_INFO "+ module loaded\n");
+    return 0;
+}
+
+static void __exit workQueueExit(void)
+{
+    flush_workqueue(workQueue);
+    destroy_workqueue(workQueue);
+    free_irq(IRQ, &devID);
+    remove_proc_entry("workqueue", NULL);
+    printk(KERN_INFO "+ module unloaded\n");
+}
+
+module_init(workQueueInit) 
+module_exit(workQueueExit)
