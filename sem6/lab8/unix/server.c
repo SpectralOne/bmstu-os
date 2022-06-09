@@ -1,55 +1,69 @@
-#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/socket.h>
-#include <sys/un.h>
+#include <sys/types.h>
 #include <time.h>
 #include <unistd.h>
-#include <errno.h>
 
-#define SOCKET_NAME "socket.soc"
-#define BUF_SIZE 256
+#include "socket.h"
 
-static int sfd;
-
-void cleanup_socket(int sockfd) {
-    close(sockfd);
-    unlink(SOCKET_NAME);
+void Cleanup(int sock) {
+    close(sock);
+    unlink(SOCK_NAME);
 }
 
-void sighandler(int signum) {
-    cleanup_socket(sfd);
-    exit(0);
-}
+int main(int argc, char *argv[]) {
+    struct sockaddr srvr_name;
+    struct sockaddr rcvr_name;
+    int namelen;
 
-int main(void) {
-    if ((sfd = socket(AF_UNIX, SOCK_DGRAM, 0)) == -1) {
-        perror("socket call error");
-        return errno;
+    char buf[MAX_MSG_LEN];
+
+    int sock;
+    int bytes;
+
+    long int curr_time = time(NULL);
+
+    // AF_UNIX - сокеты в файловом пространстве имен.
+    // SOCK_DGRAM - датаграмный сокет. Хранит границы сообщений.
+    sock = socket(AF_UNIX, SOCK_DGRAM, SOCK_STREAM);
+    if (sock < 0) {
+        perror("socket failed");
+        return ERROR_CREATE_SOCKET;
     }
-    struct sockaddr_un sock_addr;
-    sock_addr.sun_family = AF_UNIX;
-    strncpy(sock_addr.sun_path, SOCKET_NAME, strlen(SOCKET_NAME));
-    if (bind(sfd, (struct sockaddr*)&sock_addr, sizeof(sock_addr)) == -1) {
-        perror("bind call error");
-        cleanup_socket(sfd);
-        return errno;
+
+    srvr_name.sa_family = AF_UNIX;
+    strcpy(srvr_name.sa_data, SOCK_NAME);
+
+    rcvr_name.sa_family = AF_UNIX;
+    strcpy(rcvr_name.sa_data, SOCK_NAME);
+
+    if (bind(sock, &srvr_name, LEN_STRUCT_SOCKADDR(srvr_name)) < 0) {
+        perror("bind failed");
+        return ERROR_BIND_SOCKET;
     }
-    if (signal(SIGINT, sighandler) == SIG_ERR) {
-        perror("signal call error");
-        cleanup_socket(sfd);
-        return errno;
-    }
-    char msg[BUF_SIZE];
-    for (;;) {
-        size_t bytes = recv(sfd, msg, sizeof(msg) - 1, 0);
-        if (bytes == -1) {
-            perror("recv call error");
-            cleanup_socket(sfd);
-            return errno;
+
+    while (TRUE) {
+        bytes = recvfrom(sock, buf, sizeof(buf), 0, &rcvr_name, &namelen);
+
+        if (bytes < 0) {
+            perror("recvfrom failed");
+            Cleanup(sock);
+            return ERROR_RECVFROM_SOCKET;
         }
-        msg[bytes] = '\0';
-        printf("Got message: %s\n", msg);
+
+        printf("\n\nReceived message: %s" WHITE "\nLen = %ld\n______", buf,
+               strlen(buf));
+
+        if (sendto(sock, buf, strlen(buf) + 1, 0, &rcvr_name,
+                   LEN_STRUCT_SOCKADDR(rcvr_name)) < 0) {
+            perror("sendto failed");
+            return ERROR_SENDTO_SOCKET;
+        }
     }
+
+    Cleanup(sock);
+
+    return OK;
 }

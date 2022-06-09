@@ -1,35 +1,65 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <sys/socket.h>
-#include <sys/un.h>
+#include <sys/types.h>
+#include <time.h>
 #include <unistd.h>
-#include <errno.h>
 
-#define SOCKET_NAME "socket.soc"
-#define BUF_SIZE 256
+#include "socket.h"
 
-int main(void) {
-    int sfd = socket(AF_UNIX, SOCK_DGRAM, 0);
-    if (sfd == -1) {
-        perror("socket call error");
-        return errno;
+void CreateMessage(char buf[MAX_MSG_LEN], int argc, char *argv[]) {
+    long int curr_time = time(NULL);
+
+    sprintf(buf, "\n\n" YELLOW "PID: %d" GREEN "\ntime: %smsg: " BLUE, getpid(),
+            ctime(&curr_time));
+
+    if (argc < 2)
+        strcat(buf, "Hello world!");
+    else
+        strcat(buf, argv[1]);
+}
+
+int main(int argc, char *argv[]) {
+    struct sockaddr srvr_name;
+    int sock;
+
+    char buf[MAX_MSG_LEN];
+    CreateMessage(buf, argc, argv);
+    // printf("%s", buf);
+
+    sock = socket(AF_UNIX, SOCK_DGRAM, SOCK_STREAM);
+    if (sock < 0) {
+        perror("socket failed");
+        return ERROR_CREATE_SOCKET;
     }
-    struct sockaddr_un addr;
-    addr.sun_family = AF_UNIX;
-    strncpy(addr.sun_path, SOCKET_NAME, strlen(SOCKET_NAME));
-    if (connect(sfd, (struct sockaddr *) &addr, sizeof(addr)) == -1) {
-        perror("Can't set dest address");
-        return errno;
+
+    srvr_name.sa_family = AF_UNIX;
+    strcpy(srvr_name.sa_data, SOCK_NAME);
+
+    // 0 - доп флаги.
+    if (sendto(sock, buf, strlen(buf) + 1, 0, &srvr_name,
+               LEN_STRUCT_SOCKADDR(srvr_name)) < 0) {
+        perror("sendto failed");
+        return ERROR_SENDTO_SOCKET;
     }
-    char msg[BUF_SIZE];
-    snprintf(msg, BUF_SIZE, "Hello from process %d", getpid());
-    /*if (sendto(sfd, msg, strlen(msg), 0, &addr, sizeof(addr)) == -1) {*/
-    if (send(sfd, msg, strlen(msg), 0) == -1) { 
-        perror("sendto call error");
-        return errno;
-    } else {
-        printf("send message: %s\n", msg);
+
+    int bytes;
+    int namelen;
+    while (TRUE) {
+        bytes = recvfrom(sock, buf, sizeof(buf), 0, &srvr_name, &namelen);
+
+        if (bytes < 0) {
+            perror("recvfrom failed");
+            return ERROR_RECVFROM_SOCKET;
+        }
+
+        printf("\n\nReceived message: %s" WHITE "\nLen = %ld\n______", buf,
+               strlen(buf));
+
     }
-    close(sfd);
-    return 0;
+
+    close(sock);
+    printf("Send!");
+    return OK;
 }
